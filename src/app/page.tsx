@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LogOut, User } from 'lucide-react';
 
@@ -9,8 +9,9 @@ export default function HomePage() {
   const [user, setUser] = useState<{ email?: string; user_metadata?: { username?: string } } | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const supabase = useMemo(() => createClient(), []);
+
   useEffect(() => {
-    const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user ?? null);
       setLoading(false);
@@ -19,10 +20,9 @@ export default function HomePage() {
       setUser(session?.user ?? null);
     });
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
   };

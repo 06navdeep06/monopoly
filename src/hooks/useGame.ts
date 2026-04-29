@@ -132,27 +132,37 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
       {},
       {
         game_states: (payload) => {
-          if (payload.eventType === 'UPDATE') {
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             setGameState(payload.new as unknown as GameState);
           }
         },
         player_states: (payload) => {
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const updated = payload.new as unknown as PlayerState;
-            setAllPlayerStates((prev) =>
-              prev.map((ps) => (ps.id === updated.id ? updated : ps))
-            );
+            setAllPlayerStates((prev) => {
+              const exists = prev.some((ps) => ps.id === updated.id);
+              return exists
+                ? prev.map((ps) => (ps.id === updated.id ? updated : ps))
+                : [...prev, updated];
+            });
           }
         },
         property_states: (payload) => {
-          if (payload.eventType === 'UPDATE') {
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const updated = payload.new as unknown as PropertyState;
-            setPropertyStates((prev) =>
-              prev.map((ps) => (ps.id === updated.id ? updated : ps))
-            );
+            setPropertyStates((prev) => {
+              const exists = prev.some((ps) => ps.id === updated.id);
+              return exists
+                ? prev.map((ps) => (ps.id === updated.id ? updated : ps))
+                : [...prev, updated];
+            });
           }
         },
         auctions: (payload) => {
+          if (payload.eventType === 'DELETE') {
+            setActiveAuction(null);
+            return;
+          }
           const auction = payload.new as unknown as Auction;
           if (auction.status === 'active') {
             setActiveAuction(auction);
@@ -161,6 +171,10 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
           }
         },
         trades: (payload) => {
+          if (payload.eventType === 'DELETE') {
+            setActiveTrade(null);
+            return;
+          }
           const trade = payload.new as unknown as Trade;
           if (trade.status === 'pending') {
             setActiveTrade(trade);
@@ -169,15 +183,26 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
           }
         },
         room_players: (payload) => {
-          if (payload.eventType === 'UPDATE') {
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const updated = payload.new as unknown as RoomPlayer;
-            setRoomPlayers((prev) =>
-              prev.map((rp) => (rp.id === updated.id ? updated : rp))
-            );
+            setRoomPlayers((prev) => {
+              const exists = prev.some((rp) => rp.id === updated.id);
+              return exists
+                ? prev.map((rp) => (rp.id === updated.id ? updated : rp))
+                : [...prev, updated];
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const removed = payload.old as unknown as RoomPlayer;
+            setRoomPlayers((prev) => prev.filter((rp) => rp.id !== removed.id));
           }
         },
       },
-      {}
+      {},
+      (status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setLastError('Realtime connection failed. Please refresh the page.');
+        }
+      }
     );
 
     return () => {
@@ -215,6 +240,7 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Network error';
         setLastError(message);
+        return { success: false, error: message };
       } finally {
         setIsActionPending(false);
       }

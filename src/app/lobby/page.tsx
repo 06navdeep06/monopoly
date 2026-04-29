@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, LogIn, LogOut, User } from 'lucide-react';
 
 export default function LobbyPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [joinCode, setJoinCode] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -22,7 +22,7 @@ export default function LobbyPage() {
       setUser(session?.user ? { id: session.user.id, email: session.user.email, user_metadata: session.user.user_metadata } : null);
     });
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -170,9 +170,9 @@ export default function LobbyPage() {
         .maybeSingle();
 
       if (!existing) {
-        const { data: playerCount } = await supabase
+        const { count: playerCount } = await supabase
           .from('room_players')
-          .select('id', { count: 'exact' })
+          .select('id', { count: 'exact', head: true })
           .eq('room_id', room.id);
 
         const { error: joinErr } = await supabase.from('room_players').insert({
@@ -181,7 +181,7 @@ export default function LobbyPage() {
           display_name: profile.username ?? 'Player',
           token: profile.avatar_token ?? 'hat',
           color: profile.preferred_color ?? '#3B82F6',
-          turn_order: (playerCount?.length ?? 0) + 1,
+          turn_order: (playerCount ?? 0) + 1,
           status: 'waiting',
         });
         if (joinErr) throw new Error(`Join room failed: ${joinErr.message}`);

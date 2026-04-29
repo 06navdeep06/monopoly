@@ -1,6 +1,7 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useGame } from '@/hooks/useGame';
 import GameBoard from '@/components/board/GameBoard';
 import DiceRoll from '@/components/board/DiceRoll';
@@ -69,8 +70,11 @@ export default function GameRoomPage() {
 
   const handleRollDice = async () => {
     setDiceRolling(true);
-    await rollDice();
-    setTimeout(() => setDiceRolling(false), 1500);
+    try {
+      await rollDice();
+    } finally {
+      setTimeout(() => setDiceRolling(false), 1500);
+    }
   };
 
   const handleProposeTrade = async (
@@ -98,7 +102,7 @@ export default function GameRoomPage() {
         <div className="text-center card-container p-8">
           <h2 className="font-display text-xl font-bold text-game-danger mb-2">Room Not Found</h2>
           <p className="text-game-text-muted mb-4">Code: {code}</p>
-          <a href="/lobby" className="action-btn-primary">Back to Lobby</a>
+          <Link href="/lobby" className="action-btn-primary">Back to Lobby</Link>
         </div>
       </main>
     );
@@ -115,7 +119,7 @@ export default function GameRoomPage() {
             {winner?.display_name ?? 'Unknown'} Wins!
           </h2>
           <p className="text-game-text-muted mb-6">Game Over</p>
-          <a href="/lobby" className="action-btn-primary">Play Again</a>
+          <Link href="/lobby" className="action-btn-primary">Play Again</Link>
         </div>
       </main>
     );
@@ -136,9 +140,9 @@ export default function GameRoomPage() {
       roomPlayer: rp,
       playerState: allPlayerStates.find(
         (ps) => ps.player_id === rp.id || ps.player_id === rp.player_id
-      )!,
+      ),
     }))
-    .filter((p) => p.playerState);
+    .filter((p): p is { roomPlayer: typeof p.roomPlayer; playerState: NonNullable<typeof p.playerState> } => !!p.playerState);
 
   return (
     <main className="flex flex-col lg:flex-row min-h-screen p-2 sm:p-4 gap-4">
