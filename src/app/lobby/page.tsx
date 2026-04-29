@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Users, Plus, LogIn } from 'lucide-react';
+import { Plus, LogIn } from 'lucide-react';
 
 export default function LobbyPage() {
   const supabase = createClient();
@@ -12,6 +12,30 @@ export default function LobbyPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const ensureProfile = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username, avatar_token, preferred_color')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile) {
+      const username =
+        (await supabase.auth.getSession()).data.session?.user.user_metadata?.username ??
+        `Player_${Math.floor(Math.random() * 9999)}`;
+
+      await supabase.from('profiles').insert({
+        id: userId,
+        username,
+        avatar_token: 'hat',
+        preferred_color: '#F59E0B',
+      });
+
+      return { username, avatar_token: 'hat', preferred_color: '#F59E0B' };
+    }
+    return profile;
+  };
 
   const createRoom = async () => {
     setIsCreating(true);
@@ -23,6 +47,9 @@ export default function LobbyPage() {
         router.push('/login');
         return;
       }
+
+      // Ensure profile exists (required by FK constraints)
+      const profile = await ensureProfile(user.id);
 
       // Generate room code
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -43,20 +70,13 @@ export default function LobbyPage() {
 
       if (roomError) throw roomError;
 
-      // Get profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username, avatar_token, preferred_color')
-        .eq('id', user.id)
-        .single();
-
       // Join as player
       await supabase.from('room_players').insert({
         room_id: room.id,
         player_id: user.id,
-        display_name: profile?.username ?? 'Player',
-        token: profile?.avatar_token ?? 'hat',
-        color: profile?.preferred_color ?? '#F59E0B',
+        display_name: profile.username ?? 'Player',
+        token: profile.avatar_token ?? 'hat',
+        color: profile.preferred_color ?? '#F59E0B',
         turn_order: 1,
         status: 'waiting',
       });
@@ -97,13 +117,16 @@ export default function LobbyPage() {
         return;
       }
 
+      // Ensure profile exists (required by FK constraints)
+      const profile = await ensureProfile(user.id);
+
       // Check if already in room
       const { data: existing } = await supabase
         .from('room_players')
         .select('id')
         .eq('room_id', room.id)
         .eq('player_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!existing) {
         const { data: playerCount } = await supabase
@@ -111,18 +134,12 @@ export default function LobbyPage() {
           .select('id', { count: 'exact' })
           .eq('room_id', room.id);
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username, avatar_token, preferred_color')
-          .eq('id', user.id)
-          .single();
-
         await supabase.from('room_players').insert({
           room_id: room.id,
           player_id: user.id,
-          display_name: profile?.username ?? 'Player',
-          token: profile?.avatar_token ?? 'hat',
-          color: profile?.preferred_color ?? '#3B82F6',
+          display_name: profile.username ?? 'Player',
+          token: profile.avatar_token ?? 'hat',
+          color: profile.preferred_color ?? '#3B82F6',
           turn_order: (playerCount?.length ?? 0) + 1,
           status: 'waiting',
         });
