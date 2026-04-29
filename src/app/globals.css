@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 217.2 32.6% 17.5%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 43 96% 56%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 25%;
+    --input: 217.2 32.6% 25%;
+    --ring: 43 96% 56%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-game-navy text-game-text-primary font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .money-display {
+    @apply font-mono font-semibold tabular-nums;
+  }
+
+  .money-positive {
+    @apply text-game-gold;
+  }
+
+  .money-negative {
+    @apply text-game-danger;
+  }
+
+  .board-space {
+    @apply relative border border-board-border bg-board-space rounded-sm
+           flex flex-col items-center justify-center text-xs
+           transition-all duration-200 hover:brightness-125 cursor-pointer;
+  }
+
+  .board-space-color-band {
+    @apply absolute top-0 left-0 right-0 h-2 rounded-t-sm;
+  }
+
+  .player-token {
+    @apply absolute text-lg transition-all duration-500 ease-in-out z-10;
+  }
+
+  .action-btn {
+    @apply px-4 py-2 rounded-lg font-display font-semibold text-sm
+           transition-all duration-200 active:scale-95
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .action-btn-primary {
+    @apply action-btn bg-game-gold text-game-navy hover:bg-yellow-400;
+  }
+
+  .action-btn-danger {
+    @apply action-btn bg-game-danger text-white hover:bg-red-500;
+  }
+
+  .action-btn-success {
+    @apply action-btn bg-game-success text-white hover:bg-emerald-400;
+  }
+
+  .action-btn-secondary {
+    @apply action-btn bg-game-card text-game-text-primary border border-game-card-border
+           hover:bg-slate-700;
+  }
+
+  .glass-panel {
+    @apply bg-game-card/80 backdrop-blur-sm border border-game-card-border rounded-xl;
+  }
+
+  .card-container {
+    @apply bg-game-card border border-game-card-border rounded-xl p-4 shadow-lg;
+  }
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 3px;
+  }
+}
