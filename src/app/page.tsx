@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-6">
       <div className="text-center max-w-2xl">
         <h1 className="font-display text-6xl sm:text-8xl font-extrabold text-game-gold mb-4 text-shadow-lg">
-          RICHUP
+          KathPoly
         </h1>
         <p className="text-game-text-muted text-lg sm:text-xl mb-2">
           Au khela Ghar Ghar
