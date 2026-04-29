@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, LogIn } from 'lucide-react';
+import { Plus, LogIn, LogOut, User } from 'lucide-react';
 
 export default function LobbyPage() {
   const supabase = createClient();
@@ -12,6 +12,23 @@ export default function LobbyPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string; user_metadata?: { username?: string } } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ? { id: data.user.id, email: data.user.email, user_metadata: data.user.user_metadata } : null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { id: session.user.id, email: session.user.email, user_metadata: session.user.user_metadata } : null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/');
+  };
 
   const ensureProfile = async (userId: string) => {
     const { data: profile } = await supabase
@@ -25,12 +42,16 @@ export default function LobbyPage() {
         (await supabase.auth.getSession()).data.session?.user.user_metadata?.username ??
         `Player_${Math.floor(Math.random() * 9999)}`;
 
-      await supabase.from('profiles').insert({
+      const { error: insertErr } = await supabase.from('profiles').insert({
         id: userId,
         username,
         avatar_token: 'hat',
         preferred_color: '#F59E0B',
       });
+
+      if (insertErr) {
+        throw new Error(`Profile creation failed: ${insertErr.message}`);
+      }
 
       return { username, avatar_token: 'hat', preferred_color: '#F59E0B' };
     }
@@ -51,27 +72,35 @@ export default function LobbyPage() {
       // Ensure profile exists (required by FK constraints)
       const profile = await ensureProfile(user.id);
 
-      // Generate room code
+      // Generate room code (retry on collision)
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)];
+      let room: { id: string; code: string } | null = null;
+      let roomError: { message: string } | null = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        code = '';
+        for (let i = 0; i < 6; i++) {
+          code += chars[Math.floor(Math.random() * chars.length)];
+        }
+        const { data, error } = await supabase
+          .from('rooms')
+          .insert({
+            code,
+            host_id: user.id,
+            status: 'waiting',
+          })
+          .select('id, code')
+          .single();
+        if (!error) {
+          room = data;
+          break;
+        }
+        roomError = error;
       }
-
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .insert({
-          code,
-          host_id: user.id,
-          status: 'waiting',
-        })
-        .select()
-        .single();
-
-      if (roomError) throw roomError;
+      if (!room) throw new Error(roomError ? `Room creation failed: ${roomError.message}` : 'Room was not created');
 
       // Join as player
-      await supabase.from('room_players').insert({
+      const { error: joinErr } = await supabase.from('room_players').insert({
         room_id: room.id,
         player_id: user.id,
         display_name: profile.username ?? 'Player',
@@ -80,6 +109,8 @@ export default function LobbyPage() {
         turn_order: 1,
         status: 'waiting',
       });
+
+      if (joinErr) throw new Error(`Join room failed: ${joinErr.message}`);
 
       router.push(`/room/${code}`);
     } catch (err) {
@@ -134,7 +165,7 @@ export default function LobbyPage() {
           .select('id', { count: 'exact' })
           .eq('room_id', room.id);
 
-        await supabase.from('room_players').insert({
+        const { error: joinErr } = await supabase.from('room_players').insert({
           room_id: room.id,
           player_id: user.id,
           display_name: profile.username ?? 'Player',
@@ -143,6 +174,7 @@ export default function LobbyPage() {
           turn_order: (playerCount?.length ?? 0) + 1,
           status: 'waiting',
         });
+        if (joinErr) throw new Error(`Join room failed: ${joinErr.message}`);
       }
 
       router.push(`/room/${room.code}`);
@@ -155,7 +187,25 @@ export default function LobbyPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6">
-      <h1 className="font-display text-4xl font-bold text-game-gold mb-8">Game Lobby</h1>
+      <h1 className="font-display text-4xl font-bold text-game-gold mb-4">Game Lobby</h1>
+
+      {user && (
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-2 bg-game-card border border-game-card-border rounded-full px-4 py-2">
+            <User className="w-4 h-4 text-game-gold" />
+            <span className="text-game-text-primary text-sm">
+              {user.user_metadata?.username ?? user.email ?? 'Player'}
+            </span>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1 text-game-danger text-sm hover:underline"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      )}
 
       <div className="w-full max-w-md space-y-6">
         {/* Create Room */}

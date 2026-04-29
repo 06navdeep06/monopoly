@@ -1,6 +1,32 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { LogOut, User } from 'lucide-react';
 
 export default function HomePage() {
+  const [user, setUser] = useState<{ email?: string; user_metadata?: { username?: string } } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+      setLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6">
       <div className="text-center max-w-2xl">
@@ -14,6 +40,24 @@ export default function HomePage() {
           Sathi haru sanga
         </p>
 
+        {!loading && user && (
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="flex items-center gap-2 bg-game-card border border-game-card-border rounded-full px-4 py-2">
+              <User className="w-4 h-4 text-game-gold" />
+              <span className="text-game-text-primary text-sm">
+                {user.user_metadata?.username ?? user.email ?? 'Player'}
+              </span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1 text-game-danger text-sm hover:underline"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/lobby"
@@ -21,12 +65,14 @@ export default function HomePage() {
           >
             Play Now
           </Link>
-          <Link
-            href="/login"
-            className="action-btn-secondary text-lg px-8 py-4 rounded-xl text-center"
-          >
-            Sign In
-          </Link>
+          {!user && (
+            <Link
+              href="/login"
+              className="action-btn-secondary text-lg px-8 py-4 rounded-xl text-center"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
 
         <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
