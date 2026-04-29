@@ -74,15 +74,7 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: rp } = await supabase
-        .from('room_players')
-        .select('*')
-        .eq('room_id', roomId)
-        .eq('player_id', user.id)
-        .single();
-
-      if (rp) setMyPlayerId(rp.id);
-
+      // Load room players FIRST (so we have players even before game starts)
       const { data: allRp } = await supabase
         .from('room_players')
         .select('*')
@@ -91,11 +83,16 @@ export function useGame(roomId: string, roomCode: string): UseGameReturn {
 
       if (allRp) setRoomPlayers(allRp as RoomPlayer[]);
 
+      // Find my player id
+      const myRp = allRp?.find((rp) => rp.player_id === user.id);
+      if (myRp) setMyPlayerId(myRp.id);
+
+      // Load game state if exists
       const { data: gs } = await supabase
         .from('game_states')
         .select('*')
         .eq('room_id', roomId)
-        .single();
+        .maybeSingle();
 
       if (gs) {
         setGameState(gs as GameState);

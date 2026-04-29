@@ -80,7 +80,11 @@ export default function ActionPanel({
         <div className="flex items-center gap-3 text-game-text-muted">
           <Timer className="w-5 h-5 animate-spin" />
           <span className="font-display text-sm">
-            Waiting for <span className="text-game-text-primary font-semibold">{currentPlayerName}</span>...
+            {currentPlayerName && currentPlayerName !== 'Unknown' ? (
+              <>Waiting for <span className="text-game-text-primary font-semibold">{currentPlayerName}</span>...</>
+            ) : (
+              'Waiting for the game to start...'
+            )}
           </span>
         </div>
       </div>

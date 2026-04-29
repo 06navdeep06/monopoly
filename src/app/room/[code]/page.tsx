@@ -189,12 +189,16 @@ export default function GameRoomPage() {
                         {rp.display_name}
                         {rp.is_bot && <span className="text-game-text-muted text-xs ml-1">(Bot)</span>}
                       </p>
-                      {ps?.is_bankrupt ? (
-                        <p className="text-xs text-game-danger">Bankrupt</p>
+                      {ps ? (
+                        ps.is_bankrupt ? (
+                          <p className="text-xs text-game-danger">Bankrupt</p>
+                        ) : (
+                          <p className="text-xs text-game-text-muted font-mono">
+                            {formatMoney(ps.cash)}
+                          </p>
+                        )
                       ) : (
-                        <p className="text-xs text-game-text-muted font-mono">
-                          {formatMoney(ps?.cash ?? 0)}
-                        </p>
+                        <p className="text-xs text-game-text-muted">Waiting...</p>
                       )}
                     </div>
                   </div>
