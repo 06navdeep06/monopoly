@@ -52,8 +52,8 @@ export default function GameBoard({
 
   return (
     <div className={cn('relative w-full max-w-[720px] aspect-square', className)}>
-      <div className="grid grid-cols-11 grid-rows-11 w-full h-full gap-[1px] bg-board-border rounded-xl overflow-hidden">
-        {BOARD_SPACES.map((space) => {
+      <div className="grid grid-cols-11 grid-rows-11 w-full h-full gap-[1px] bg-board-border rounded-xl overflow-hidden shadow-2xl shadow-black/50">
+        {BOARD_SPACES.map((space, index) => {
           const pos = gridPositions[space.id];
           if (!pos) return null;
 
@@ -71,8 +71,11 @@ export default function GameBoard({
           );
 
           return (
-            <div
+            <motion.div
               key={space.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.01 }}
               className={cn(
                 'board-space relative',
                 isCorner && 'col-span-2 row-span-2',
@@ -207,7 +210,7 @@ export default function GameBoard({
                   })}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           );
         })}
 
