@@ -8,10 +8,10 @@ export default function HomePage() {
           RICHUP
         </h1>
         <p className="text-game-text-muted text-lg sm:text-xl mb-2">
-          Private Monopoly — All Premium Features Unlocked
+          Au khela Ghar Ghar
         </p>
         <p className="text-game-text-muted text-sm mb-10">
-          Create or join a room to play with friends. No ads, no paywalls.
+          Sathi haru sanga
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
