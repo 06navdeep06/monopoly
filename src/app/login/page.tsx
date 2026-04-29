@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const guestInFlight = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,34 +50,26 @@ export default function LoginPage() {
   };
 
   const handleGuestLogin = async () => {
+    if (guestInFlight.current) return;
+    guestInFlight.current = true;
     setLoading(true);
     setError(null);
 
     try {
-      const guestEmail = `guest_${Date.now()}@richup.local`;
-      const guestPassword = `guest_${crypto.randomUUID()}`;
-
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: guestEmail,
-        password: guestPassword,
+      const { data, error } = await supabase.auth.signInAnonymously({
         options: {
           data: { username: `Guest_${Math.floor(Math.random() * 9999)}` },
         },
       });
 
-      if (signUpError) throw signUpError;
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: guestEmail,
-        password: guestPassword,
-      });
-
-      if (signInError) throw signInError;
+      if (error) throw error;
+      if (!data.session) throw new Error('No session returned');
       router.push('/lobby');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Guest login failed');
     } finally {
       setLoading(false);
+      guestInFlight.current = false;
     }
   };
 
