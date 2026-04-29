@@ -84,7 +84,7 @@ export class GameRealtimeManager {
     // Register broadcast event listeners
     for (const [event, handler] of Object.entries(eventHandlers)) {
       if (handler) {
-        this.channel.on('broadcast', { event }, (payload) => {
+        this.channel.on('broadcast', { event }, (payload: { payload: unknown }) => {
           (handler as (p: unknown) => void)(payload.payload);
         });
       }
@@ -132,14 +132,14 @@ export class GameRealtimeManager {
     }
 
     if (presenceHandlers.onJoin) {
-      this.channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        presenceHandlers.onJoin?.(key, newPresences as PresenceData[]);
+      this.channel.on('presence', { event: 'join' }, ({ key, newPresences }: { key: string; newPresences: unknown[] }) => {
+        presenceHandlers.onJoin?.(key, (newPresences as unknown) as PresenceData[]);
       });
     }
 
     if (presenceHandlers.onLeave) {
-      this.channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        presenceHandlers.onLeave?.(key, leftPresences as PresenceData[]);
+      this.channel.on('presence', { event: 'leave' }, ({ key, leftPresences }: { key: string; leftPresences: unknown[] }) => {
+        presenceHandlers.onLeave?.(key, (leftPresences as unknown) as PresenceData[]);
       });
     }
 
