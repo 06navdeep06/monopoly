@@ -32,6 +32,8 @@ export interface BoardSpace {
   id: number;
   type: SpaceType;
   name: string;
+  country?: string;
+  flag?: string;
   color_group?: ColorGroup;
   price?: number;
   rent: number[];

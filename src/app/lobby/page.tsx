@@ -31,31 +31,41 @@ export default function LobbyPage() {
   };
 
   const ensureProfile = async (userId: string) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('username, avatar_token, preferred_color')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, avatar_token, preferred_color')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (!profile) {
-      const username =
-        (await supabase.auth.getSession()).data.session?.user.user_metadata?.username ??
-        `Player_${Math.floor(Math.random() * 9999)}`;
+      if (!profile) {
+        const username =
+          (await supabase.auth.getSession()).data.session?.user.user_metadata?.username ??
+          `Player_${Math.floor(Math.random() * 9999)}`;
 
-      const { error: insertErr } = await supabase.from('profiles').insert({
-        id: userId,
-        username,
-        avatar_token: 'hat',
-        preferred_color: '#F59E0B',
-      });
+        const { error: insertErr } = await supabase.from('profiles').insert({
+          id: userId,
+          username,
+          avatar_token: 'hat',
+          preferred_color: '#F59E0B',
+        });
 
-      if (insertErr) {
-        throw new Error(`Profile creation failed: ${insertErr.message}`);
+        if (insertErr) {
+          throw new Error(`Profile creation failed: ${insertErr.message}`);
+        }
+
+        return { username, avatar_token: 'hat', preferred_color: '#F59E0B' };
       }
-
-      return { username, avatar_token: 'hat', preferred_color: '#F59E0B' };
+      return profile;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes("Could not find the table 'public.profiles'") || msg.includes('relation "profiles" does not exist')) {
+        throw new Error(
+          "Database table 'profiles' is missing. Run the Supabase migration: npx supabase db push"
+        );
+      }
+      throw err;
     }
-    return profile;
   };
 
   const createRoom = async () => {

@@ -98,45 +98,71 @@ export default function GameBoard({
               {/* Owner overlay */}
               {ownerRp && (
                 <div
-                  className="absolute inset-0 opacity-15 rounded-sm"
+                  className="absolute inset-0 opacity-10 rounded-sm"
                   style={{ backgroundColor: ownerRp.color }}
                 />
               )}
 
               {/* Space content */}
-              <div className="flex flex-col items-center justify-center p-0.5 text-center z-10 relative">
-                <span className="text-[6px] sm:text-[8px] leading-tight font-medium text-game-text-muted truncate w-full">
-                  {space.name}
-                </span>
-
-                {space.price && (
-                  <span className="text-[6px] sm:text-[7px] font-mono text-game-gold">
-                    {formatMoney(space.price)}
-                  </span>
+              <div className="flex flex-col items-center justify-center p-0.5 text-center z-10 relative w-full h-full">
+                {/* Flag + Name for properties */}
+                {space.type === 'property' && space.flag && (
+                  <div className="flex flex-col items-center gap-0 leading-none">
+                    <span className="text-[10px] sm:text-sm leading-none">{space.flag}</span>
+                    <span className="text-[5px] sm:text-[7px] leading-tight font-semibold text-game-text-primary truncate max-w-full px-0.5">
+                      {space.name}
+                    </span>
+                    <span className="text-[5px] sm:text-[6px] font-mono text-game-gold leading-none">
+                      {formatMoney(space.price ?? 0)}
+                    </span>
+                  </div>
                 )}
 
+                {/* Railroad / Utility */}
+                {(space.type === 'railroad' || space.type === 'utility') && space.flag && (
+                  <div className="flex flex-col items-center gap-0 leading-none">
+                    <span className="text-[8px] sm:text-xs leading-none">{space.flag}</span>
+                    <span className="text-[5px] sm:text-[7px] leading-tight font-semibold text-game-text-muted truncate max-w-full px-0.5">
+                      {space.name}
+                    </span>
+                  </div>
+                )}
+
+                {/* Special spaces */}
                 {space.type === 'go' && (
-                  <span className="text-sm sm:text-lg">GO</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[8px] sm:text-xs font-bold text-game-success">START</span>
+                    <span className="text-[5px] sm:text-[6px] text-game-gold">+$200</span>
+                  </div>
                 )}
                 {space.type === 'jail_visit' && (
-                  <span className="text-xs sm:text-sm">JAIL</span>
+                  <span className="text-[7px] sm:text-[10px] font-bold text-game-danger">EMBASSY</span>
                 )}
                 {space.type === 'free_parking' && (
-                  <span className="text-xs sm:text-sm">FREE</span>
+                  <span className="text-[6px] sm:text-[8px] font-bold text-game-success">WORLD<br/>TOUR</span>
                 )}
                 {space.type === 'go_to_jail' && (
-                  <span className="text-[7px] sm:text-xs">GO TO JAIL</span>
+                  <span className="text-[6px] sm:text-[7px] font-bold text-game-danger">EXTRADITION</span>
                 )}
                 {space.type === 'chance' && (
-                  <span className="text-sm">?</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm sm:text-lg text-game-gold">?</span>
+                    <span className="text-[5px] sm:text-[6px] text-game-text-muted">SURPRISE</span>
+                  </div>
                 )}
                 {space.type === 'community_chest' && (
-                  <span className="text-xs sm:text-sm">CC</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[7px] sm:text-[9px] text-game-success">NEWS</span>
+                    <span className="text-[5px] sm:text-[6px] text-game-text-muted">WORLD</span>
+                  </div>
                 )}
                 {space.type === 'tax' && (
-                  <span className="text-[6px] sm:text-[8px] text-game-danger font-mono">
-                    {formatMoney(space.tax_amount ?? 0)}
-                  </span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[6px] sm:text-[8px] font-bold text-game-danger">{space.name}</span>
+                    <span className="text-[5px] sm:text-[6px] font-mono text-game-danger">
+                      {formatMoney(space.tax_amount ?? 0)}
+                    </span>
+                  </div>
                 )}
 
                 {/* Houses/Hotels */}
@@ -192,9 +218,9 @@ export default function GameBoard({
         >
           <div className="text-center">
             <h2 className="font-display text-2xl sm:text-4xl font-bold text-game-gold text-shadow-lg">
-              RICHUP
+              KathPoly
             </h2>
-            <p className="text-game-text-muted text-xs mt-1">Private Edition</p>
+            <p className="text-game-text-muted text-xs mt-1">World Edition</p>
           </div>
         </div>
       </div>

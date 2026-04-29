@@ -57,13 +57,19 @@
   }
 
   .board-space {
-    @apply relative border border-board-border bg-board-space rounded-sm
+    @apply relative border border-board-border bg-[#151B2E] rounded-sm
            flex flex-col items-center justify-center text-xs
-           transition-all duration-200 hover:brightness-125 cursor-pointer;
+           transition-all duration-200 hover:brightness-125 cursor-pointer
+           overflow-hidden;
   }
 
   .board-space-color-band {
-    @apply absolute top-0 left-0 right-0 h-2 rounded-t-sm;
+    @apply absolute top-0 left-0 right-0 h-[6px] sm:h-2 rounded-t-sm;
+  }
+
+  /* Richup-style corner spaces */
+  .board-space[data-corner="true"] {
+    @apply bg-[#0F1525];
   }
 
   .player-token {

@@ -43,9 +43,9 @@ module.exports = {
           foreground: 'hsl(var(--card-foreground))',
         },
         board: {
-          bg: '#1A2744',
-          space: '#1E293B',
-          border: '#334155',
+          bg: '#0B0F1A',
+          space: '#151B2E',
+          border: '#1E293B',
         },
         game: {
           navy: '#0F172A',
