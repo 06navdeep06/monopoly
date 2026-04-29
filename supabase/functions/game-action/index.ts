@@ -111,7 +111,22 @@ Deno.serve(async (req: Request) => {
 
     const channel = adminClient.channel(`room:${roomId}`);
 
-    switch (action.type) {
+    try {
+      // Subscribe before broadcasting — otherwise messages are silently dropped
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Realtime subscribe timeout')), 5000);
+        channel.subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            clearTimeout(timeout);
+            resolve();
+          } else if (status === 'CHANNEL_ERROR') {
+            clearTimeout(timeout);
+            reject(new Error('Realtime channel error'));
+          }
+        });
+      });
+
+      switch (action.type) {
       case 'ROLL_DICE': {
         if (gameState.phase !== 'roll' && gameState.phase !== 'jail_decision') {
           return errorResponse('Cannot roll dice in current phase', 400);
@@ -298,14 +313,18 @@ Deno.serve(async (req: Request) => {
         const propertyId = action.propertyId as number;
         const auctionEndsAt = new Date(Date.now() + 30000).toISOString();
 
-        await adminClient.from('auctions').insert({
+        const { data: auction, error: auctionError } = await adminClient.from('auctions').insert({
           game_state_id: gameState.id,
           property_id: propertyId,
           initiated_by_player_id: roomPlayer.id,
           status: 'active',
           current_highest_bid: 0,
           ends_at: auctionEndsAt,
-        });
+        }).select().single();
+
+        if (auctionError || !auction) {
+          return errorResponse('Failed to create auction', 500);
+        }
 
         await adminClient.from('game_states').update({
           phase: 'auction',
@@ -315,7 +334,7 @@ Deno.serve(async (req: Request) => {
           type: 'broadcast',
           event: 'auction:started',
           payload: {
-            auctionId: '',
+            auctionId: auction.id,
             propertyId,
             startingBid: 1,
             endsAt: auctionEndsAt,
@@ -824,6 +843,9 @@ Deno.serve(async (req: Request) => {
 
       default:
         return errorResponse(`Unknown action type: ${action.type}`, 400);
+      }
+    } finally {
+      await adminClient.removeChannel(channel);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';

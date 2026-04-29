@@ -70,9 +70,15 @@ export class GameRealtimeManager {
     roomCode: string,
     eventHandlers: EventHandlers,
     postgresHandlers: PostgresChangeHandlers,
-    presenceHandlers: PresenceHandlers
+    presenceHandlers: PresenceHandlers,
+    onStatus?: (status: 'SUBSCRIBED' | 'CLOSED' | 'CHANNEL_ERROR' | 'TIMED_OUT') => void
   ): void {
     this.roomCode = roomCode;
+
+    // Clean up any existing channel first to avoid duplicates
+    if (this.channel) {
+      this.supabase.removeChannel(this.channel);
+    }
 
     this.channel = this.supabase.channel(`room:${roomCode}`, {
       config: {
@@ -143,7 +149,12 @@ export class GameRealtimeManager {
       });
     }
 
-    this.channel.subscribe();
+    this.channel.subscribe((status: 'SUBSCRIBED' | 'CLOSED' | 'CHANNEL_ERROR' | 'TIMED_OUT') => {
+      if (onStatus) onStatus(status);
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error(`Realtime channel error for room ${roomCode}: ${status}`);
+      }
+    });
   }
 
   /**
